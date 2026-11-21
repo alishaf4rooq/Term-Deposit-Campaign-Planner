@@ -1,9 +1,7 @@
 
 import streamlit as st
 import pandas as pd
-import numpy as np
 import sqlite3
-import joblib
 from pathlib import Path
 
 import plotly.express as px
@@ -14,11 +12,11 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 
 
 # =========================================================
-# PAGE CONFIGURATION
+# PAGE CONFIG
 # =========================================================
 
 st.set_page_config(
@@ -30,94 +28,237 @@ st.set_page_config(
 
 
 # =========================================================
-# CUSTOM CSS - TEXT VISIBILITY FIX
+# COMPLETE DARK THEME
 # =========================================================
 
 st.markdown("""
 <style>
 
-/* Main application */
+/* MAIN BACKGROUND */
 .stApp {
-    background-color: #f5f7fb;
+    background-color: #0B1120 !important;
+    color: #F8FAFC !important;
 }
 
-/* Main headings */
-h1, h2, h3, h4 {
-    color: #172033 !important;
+[data-testid="stAppViewContainer"] {
+    background-color: #0B1120 !important;
 }
 
-/* Normal text */
-p, span, label, li {
-    color: #263247;
+[data-testid="stHeader"] {
+    background-color: #0B1120 !important;
 }
 
-/* Metric cards */
-div[data-testid="stMetric"] {
-    background-color: #ffffff !important;
-    padding: 20px !important;
-    border-radius: 12px !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 2px 7px rgba(0,0,0,0.05);
+/* MAIN CONTENT */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
 }
 
-/* Metric labels */
-div[data-testid="stMetric"] [data-testid="stMetricLabel"],
-div[data-testid="stMetric"] [data-testid="stMetricLabel"] p,
-div[data-testid="stMetric"] label,
-div[data-testid="stMetric"] label p {
-    color: #263247 !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
-}
-
-/* Metric numbers */
-div[data-testid="stMetric"] [data-testid="stMetricValue"],
-div[data-testid="stMetric"] [data-testid="stMetricValue"] div {
-    color: #111827 !important;
-    font-size: 30px !important;
+/* HEADINGS */
+h1, h2, h3, h4, h5, h6 {
+    color: #F8FAFC !important;
     font-weight: 700 !important;
 }
 
-/* Metric delta */
-div[data-testid="stMetric"] [data-testid="stMetricDelta"],
-div[data-testid="stMetric"] [data-testid="stMetricDelta"] p {
-    color: #334155 !important;
+/* GENERAL TEXT */
+.stApp p,
+.stApp li,
+.stApp label,
+.stApp .stMarkdown {
+    color: #DCE5F1 !important;
 }
 
-/* Cards and containers */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background-color: #ffffff;
-    border-radius: 12px;
-}
-
-/* Dataframes */
-div[data-testid="stDataFrame"] {
-    background-color: #ffffff;
-}
-
-/* Sidebar */
+/* SIDEBAR */
 section[data-testid="stSidebar"] {
-    background-color: #172033;
+    background-color: #111B2E !important;
+    border-right: 1px solid #26354D !important;
 }
 
 section[data-testid="stSidebar"] * {
-    color: #ffffff !important;
+    color: #E2E8F0 !important;
 }
 
-/* Buttons */
-.stButton button {
-    border-radius: 8px;
-    font-weight: 600;
+/* SIDEBAR RADIO */
+section[data-testid="stSidebar"] div[role="radiogroup"] label {
+    background-color: transparent !important;
+    color: #E2E8F0 !important;
+    padding: 9px !important;
+    border-radius: 8px !important;
 }
 
-/* Inputs */
-input, textarea {
-    color: #172033 !important;
+section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+    background-color: #26354D !important;
 }
 
-/* Success and information boxes */
+/* METRIC CARDS */
+div[data-testid="stMetric"] {
+    background-color: #18243A !important;
+    border: 1px solid #30415E !important;
+    border-radius: 14px !important;
+    padding: 20px !important;
+    min-height: 115px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+}
+
+/* METRIC LABELS */
+div[data-testid="stMetricLabel"],
+div[data-testid="stMetricLabel"] p {
+    color: #C6D3E3 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+
+/* METRIC VALUES */
+div[data-testid="stMetricValue"],
+div[data-testid="stMetricValue"] div {
+    color: #FFFFFF !important;
+    font-size: 29px !important;
+    font-weight: 700 !important;
+}
+
+/* METRIC DELTA */
+div[data-testid="stMetricDelta"],
+div[data-testid="stMetricDelta"] p {
+    color: #86EFAC !important;
+}
+
+/* CONTAINERS */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background-color: #141F33 !important;
+    border: 1px solid #2D3D56 !important;
+    border-radius: 13px !important;
+}
+
+/* INPUTS */
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input,
+.stTextArea textarea {
+    background-color: #1B2940 !important;
+    color: #FFFFFF !important;
+    border: 1px solid #42536E !important;
+    border-radius: 8px !important;
+}
+
+/* INPUT PLACEHOLDERS */
+input::placeholder,
+textarea::placeholder {
+    color: #AAB8CA !important;
+}
+
+/* SELECT BOX */
+.stSelectbox div[data-baseweb="select"] > div,
+.stMultiSelect div[data-baseweb="select"] > div {
+    background-color: #1B2940 !important;
+    color: #FFFFFF !important;
+    border-color: #42536E !important;
+}
+
+/* SELECT BOX TEXT */
+.stSelectbox div,
+.stMultiSelect div {
+    color: #FFFFFF !important;
+}
+
+/* DROPDOWN MENU */
+div[data-baseweb="popover"],
+ul[data-baseweb="menu"] {
+    background-color: #1B2940 !important;
+}
+
+li[data-baseweb="option"] {
+    background-color: #1B2940 !important;
+    color: #FFFFFF !important;
+}
+
+li[data-baseweb="option"]:hover {
+    background-color: #30415E !important;
+}
+
+/* BUTTONS */
+.stButton button,
+.stFormSubmitButton button {
+    background-color: #2563EB !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 9px !important;
+    font-weight: 600 !important;
+    padding: 9px 18px !important;
+}
+
+/* BUTTON HOVER */
+.stButton button:hover,
+.stFormSubmitButton button:hover {
+    background-color: #1D4ED8 !important;
+    color: #FFFFFF !important;
+}
+
+/* DATA TABLE */
+div[data-testid="stDataFrame"] {
+    background-color: #141F33 !important;
+    border: 1px solid #30415E !important;
+    border-radius: 10px !important;
+}
+
+/* CHECKBOX AND RADIO */
+.stCheckbox label,
+.stRadio label {
+    color: #E2E8F0 !important;
+}
+
+/* EXPANDERS */
+div[data-testid="stExpander"] {
+    background-color: #141F33 !important;
+    border: 1px solid #30415E !important;
+    border-radius: 10px !important;
+}
+
+div[data-testid="stExpander"] summary {
+    color: #FFFFFF !important;
+}
+
+/* TABS */
+.stTabs [data-baseweb="tab"] {
+    color: #DCE5F1 !important;
+}
+
+/* ALERTS */
+div[data-testid="stAlert"] {
+    background-color: #18243A !important;
+    border: 1px solid #30415E !important;
+}
+
 div[data-testid="stAlert"] p {
-    color: #172033 !important;
+    color: #F1F5F9 !important;
+}
+
+/* LINKS */
+a {
+    color: #60A5FA !important;
+}
+
+/* DIVIDER */
+hr {
+    border-color: #30415E !important;
+}
+
+/* CAPTIONS */
+.stCaption {
+    color: #AAB8CA !important;
+}
+
+/* PLOTLY CHART */
+div[data-testid="stPlotlyChart"] {
+    background-color: #141F33 !important;
+    border: 1px solid #30415E !important;
+    border-radius: 12px !important;
+    padding: 10px !important;
+}
+
+/* FILE UPLOADER */
+section[data-testid="stFileUploader"] {
+    background-color: #18243A !important;
+    border-radius: 10px !important;
 }
 
 </style>
@@ -125,32 +266,26 @@ div[data-testid="stAlert"] p {
 
 
 # =========================================================
-# PATHS
+# PATH CONFIGURATION
 # =========================================================
 
 BASE_DIR = Path(__file__).resolve().parent
 
 DATA_PATH = BASE_DIR / "data" / "bank-additional-full.csv"
-
-# Fallback for a CSV temporarily uploaded in the root folder
 ROOT_DATA_PATH = BASE_DIR / "bank-additional-full.csv"
-
-MODEL_PATH = BASE_DIR / "model" / "bank_subscription_model.joblib"
 
 DB_PATH = BASE_DIR / "campaigns.db"
 
 
 # =========================================================
-# DATABASE FUNCTIONS
+# DATABASE
 # =========================================================
 
 def initialize_database():
 
     connection = sqlite3.connect(DB_PATH)
 
-    cursor = connection.cursor()
-
-    cursor.execute("""
+    connection.execute("""
         CREATE TABLE IF NOT EXISTS campaigns (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             campaign_name TEXT NOT NULL,
@@ -169,9 +304,7 @@ def add_campaign(name, segment, budget, start_date, notes):
 
     connection = sqlite3.connect(DB_PATH)
 
-    cursor = connection.cursor()
-
-    cursor.execute("""
+    connection.execute("""
         INSERT INTO campaigns
         (campaign_name, target_segment, budget, start_date, notes)
         VALUES (?, ?, ?, ?, ?)
@@ -185,25 +318,23 @@ def get_campaigns():
 
     connection = sqlite3.connect(DB_PATH)
 
-    df = pd.read_sql_query(
+    result = pd.read_sql_query(
         "SELECT * FROM campaigns ORDER BY id DESC",
         connection
     )
 
     connection.close()
 
-    return df
+    return result
 
 
 def delete_campaign(campaign_id):
 
     connection = sqlite3.connect(DB_PATH)
 
-    cursor = connection.cursor()
-
-    cursor.execute(
+    connection.execute(
         "DELETE FROM campaigns WHERE id = ?",
-        (campaign_id,)
+        (int(campaign_id),)
     )
 
     connection.commit()
@@ -221,22 +352,25 @@ initialize_database()
 def load_dataset():
 
     if DATA_PATH.exists():
-        path = DATA_PATH
+        file_path = DATA_PATH
 
     elif ROOT_DATA_PATH.exists():
-        path = ROOT_DATA_PATH
+        file_path = ROOT_DATA_PATH
 
     else:
         raise FileNotFoundError(
-            "Dataset not found. Please upload "
-            "bank-additional-full.csv inside the data folder."
+            "Dataset missing. Upload bank-additional-full.csv "
+            "inside the data folder."
         )
 
-    df = pd.read_csv(path, sep=";")
+    data = pd.read_csv(file_path, sep=";")
 
-    df.columns = df.columns.str.strip()
+    data.columns = data.columns.str.strip()
 
-    return df
+    if "y" not in data.columns:
+        raise ValueError("Target column 'y' is missing.")
+
+    return data
 
 
 try:
@@ -247,33 +381,70 @@ except Exception as error:
     st.error(f"Dataset could not be loaded: {error}")
 
     st.info(
-        "Check that data/bank-additional-full.csv "
-        "exists and is the original semicolon-separated CSV."
+        "Required path: data/bank-additional-full.csv"
     )
 
     st.stop()
 
 
 # =========================================================
-# GENERAL DATA PREPARATION
+# DATA PREPARATION
 # =========================================================
 
-df["y"] = df["y"].astype(str).str.lower().str.strip()
+df["y"] = df["y"].astype(str).str.strip().str.lower()
 
 total_customers = len(df)
 
-subscribed = (df["y"] == "yes").sum()
+subscribed = int((df["y"] == "yes").sum())
 
-not_subscribed = (df["y"] == "no").sum()
+not_subscribed = int((df["y"] == "no").sum())
 
 subscription_rate = (
     subscribed / total_customers * 100
-    if total_customers > 0 else 0
+    if total_customers else 0
 )
 
 
 # =========================================================
-# MACHINE LEARNING FUNCTIONS
+# DARK CHART HELPER
+# =========================================================
+
+def dark_chart(fig, height=400):
+
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="#141F33",
+        plot_bgcolor="#141F33",
+        font=dict(
+            color="#F1F5F9",
+            family="Arial"
+        ),
+        title_font=dict(
+            color="#FFFFFF",
+            size=18
+        ),
+        legend=dict(
+            font=dict(color="#E2E8F0")
+        ),
+        xaxis=dict(
+            title_font=dict(color="#E2E8F0"),
+            tickfont=dict(color="#E2E8F0"),
+            gridcolor="#30415E"
+        ),
+        yaxis=dict(
+            title_font=dict(color="#E2E8F0"),
+            tickfont=dict(color="#E2E8F0"),
+            gridcolor="#30415E"
+        ),
+        height=height,
+        margin=dict(l=30, r=20, t=65, b=40)
+    )
+
+    return fig
+
+
+# =========================================================
+# MACHINE LEARNING MODEL
 # =========================================================
 
 @st.cache_resource
@@ -281,9 +452,12 @@ def train_model():
 
     data = load_dataset().copy()
 
-    X = data.drop(columns=["y", "duration"], errors="ignore")
+    X = data.drop(
+        columns=["y", "duration"],
+        errors="ignore"
+    )
 
-    y = data["y"].astype(str).str.lower().str.strip()
+    y = data["y"].astype(str).str.strip().str.lower()
 
     numeric_columns = X.select_dtypes(
         include=["number"]
@@ -294,27 +468,38 @@ def train_model():
     ).columns.tolist()
 
     numeric_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="median"))
+        (
+            "imputer",
+            SimpleImputer(strategy="median")
+        )
     ])
 
     categorical_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("encoder", OneHotEncoder(handle_unknown="ignore"))
+        (
+            "imputer",
+            SimpleImputer(strategy="most_frequent")
+        ),
+        (
+            "encoder",
+            OneHotEncoder(handle_unknown="ignore")
+        )
     ])
 
-    preprocessor = ColumnTransformer([
+    preprocessing = ColumnTransformer([
         ("numeric", numeric_pipeline, numeric_columns),
         ("categorical", categorical_pipeline, categorical_columns)
     ])
 
+    classifier = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        class_weight="balanced",
+        n_jobs=-1
+    )
+
     model = Pipeline([
-        ("preprocessor", preprocessor),
-        ("classifier", RandomForestClassifier(
-            n_estimators=150,
-            random_state=42,
-            class_weight="balanced",
-            n_jobs=-1
-        ))
+        ("preprocessing", preprocessing),
+        ("classifier", classifier)
     ])
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -329,21 +514,26 @@ def train_model():
 
     predictions = model.predict(X_test)
 
-    accuracy = accuracy_score(y_test, predictions)
+    accuracy = accuracy_score(
+        y_test,
+        predictions
+    )
 
     return model, accuracy, X.columns.tolist()
 
 
 # =========================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR
 # =========================================================
 
 st.sidebar.title("📊 Term Deposit Planner")
 
-st.sidebar.write("Campaign Management System")
+st.sidebar.caption("Marketing Campaign Management")
+
+st.sidebar.divider()
 
 page = st.sidebar.radio(
-    "Navigation",
+    "NAVIGATION",
     [
         "Dashboard",
         "Campaign Planner",
@@ -355,23 +545,25 @@ page = st.sidebar.radio(
 
 st.sidebar.divider()
 
-st.sidebar.caption("Academic Machine Learning Project")
+st.sidebar.caption("Machine Learning Academic Project")
 
-st.sidebar.caption("UCI Bank Marketing Dataset")
+st.sidebar.caption("Powered by Streamlit")
 
 
 # =========================================================
-# DASHBOARD
+# PAGE 1: DASHBOARD
 # =========================================================
 
 if page == "Dashboard":
 
     st.title("📊 Dashboard")
 
-    st.write(
-        "Welcome to the Term-Deposit Campaign Planner. "
-        "Analyze customers and plan effective marketing campaigns."
+    st.markdown(
+        "Welcome to the **Term Deposit Campaign Planner**. "
+        "Monitor customer subscriptions and marketing performance."
     )
+
+    st.divider()
 
     st.subheader("Campaign Overview")
 
@@ -385,7 +577,7 @@ if page == "Dashboard":
 
     with col2:
         st.metric(
-            "Subscribed Customers",
+            "Subscribed",
             f"{subscribed:,}"
         )
 
@@ -403,7 +595,7 @@ if page == "Dashboard":
 
     st.divider()
 
-    st.subheader("Subscription Analysis")
+    st.subheader("Subscription Analytics")
 
     col1, col2 = st.columns(2)
 
@@ -424,7 +616,10 @@ if page == "Dashboard":
             color_continuous_scale="Blues"
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            dark_chart(fig),
+            use_container_width=True
+        )
 
     with col2:
 
@@ -443,7 +638,10 @@ if page == "Dashboard":
             color_continuous_scale="Teal"
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            dark_chart(fig),
+            use_container_width=True
+        )
 
     st.subheader("Subscription Distribution")
 
@@ -456,15 +654,19 @@ if page == "Dashboard":
         distribution,
         names="Subscription",
         values="Customers",
-        hole=0.45,
-        title="Customer Subscription Distribution"
+        hole=0.5,
+        title="Customer Subscription Distribution",
+        color_discrete_sequence=["#22C55E", "#64748B"]
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        dark_chart(fig),
+        use_container_width=True
+    )
 
 
 # =========================================================
-# CAMPAIGN PLANNER
+# PAGE 2: CAMPAIGN PLANNER
 # =========================================================
 
 elif page == "Campaign Planner":
@@ -472,27 +674,30 @@ elif page == "Campaign Planner":
     st.title("📋 Campaign Planner")
 
     st.write(
-        "Create and manage your term-deposit marketing campaigns."
+        "Create, monitor and manage your marketing campaigns."
     )
+
+    st.divider()
 
     st.subheader("Create New Campaign")
 
     with st.form("campaign_form"):
 
         campaign_name = st.text_input(
-            "Campaign Name"
+            "Campaign Name",
+            placeholder="Enter campaign name"
         )
 
         target_segment = st.selectbox(
             "Target Customer Segment",
             [
+                "All Customers",
                 "Students",
                 "Retired",
                 "Management",
                 "Technicians",
                 "Blue-collar",
-                "Entrepreneurs",
-                "All Customers"
+                "Entrepreneurs"
             ]
         )
 
@@ -508,31 +713,36 @@ elif page == "Campaign Planner":
         )
 
         notes = st.text_area(
-            "Campaign Notes"
+            "Campaign Description / Notes",
+            placeholder="Enter campaign details..."
         )
 
-        submitted = st.form_submit_button(
-            "Save Campaign",
+        submit = st.form_submit_button(
+            "➕ Create Campaign",
             use_container_width=True
         )
 
-        if submitted:
+        if submit:
 
             if campaign_name.strip():
 
                 add_campaign(
-                    campaign_name,
+                    campaign_name.strip(),
                     target_segment,
                     budget,
                     str(start_date),
                     notes
                 )
 
-                st.success("Campaign saved successfully!")
+                st.success(
+                    "Campaign created successfully!"
+                )
 
             else:
 
-                st.warning("Please enter a campaign name.")
+                st.warning(
+                    "Please enter a campaign name."
+                )
 
     st.divider()
 
@@ -558,9 +768,13 @@ elif page == "Campaign Planner":
 
         with col3:
             st.metric(
-                "Target Segments",
+                "Customer Segments",
                 campaigns["target_segment"].nunique()
             )
+
+        st.divider()
+
+        st.subheader("Saved Campaigns")
 
         st.dataframe(
             campaigns,
@@ -575,16 +789,14 @@ elif page == "Campaign Planner":
             for _, row in campaigns.iterrows()
         }
 
-        selected_campaign = st.selectbox(
-            "Select campaign",
+        selected = st.selectbox(
+            "Select campaign to delete",
             list(campaign_options.keys())
         )
 
-        if st.button("Delete Selected Campaign"):
+        if st.button("🗑️ Delete Selected Campaign"):
 
-            delete_campaign(
-                campaign_options[selected_campaign]
-            )
+            delete_campaign(campaign_options[selected])
 
             st.success("Campaign deleted successfully!")
 
@@ -592,11 +804,13 @@ elif page == "Campaign Planner":
 
     else:
 
-        st.info("No campaigns created yet. Create your first campaign above.")
+        st.info(
+            "No campaigns available. Create your first campaign above."
+        )
 
 
 # =========================================================
-# CUSTOMER INSIGHTS
+# PAGE 3: CUSTOMER INSIGHTS
 # =========================================================
 
 elif page == "Customer Insights":
@@ -604,10 +818,12 @@ elif page == "Customer Insights":
     st.title("👥 Customer Insights")
 
     st.write(
-        "Explore customer segments and their subscription behavior."
+        "Understand customer segments and subscription behavior."
     )
 
-    st.subheader("Subscription by Job")
+    st.divider()
+
+    st.subheader("Customer Subscription by Job")
 
     job_data = (
         df.groupby("job")["y"]
@@ -620,32 +836,33 @@ elif page == "Customer Insights":
         job_data,
         x="job",
         y="Subscription Rate",
-        title="Subscription Rate by Job",
         color="Subscription Rate",
+        title="Subscription Rate by Job",
         color_continuous_scale="Viridis"
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        dark_chart(fig),
+        use_container_width=True
+    )
 
-    st.subheader("Customer Age Groups")
+    st.divider()
 
-    bins = [0, 25, 35, 45, 55, 65, 100]
-
-    labels = [
-        "18-25",
-        "26-35",
-        "36-45",
-        "46-55",
-        "56-65",
-        "65+"
-    ]
+    st.subheader("Customer Age Group Analysis")
 
     age_df = df.copy()
 
     age_df["Age Group"] = pd.cut(
         age_df["age"],
-        bins=bins,
-        labels=labels
+        bins=[0, 25, 35, 45, 55, 65, 100],
+        labels=[
+            "18-25",
+            "26-35",
+            "36-45",
+            "46-55",
+            "56-65",
+            "65+"
+        ]
     )
 
     age_data = (
@@ -658,12 +875,17 @@ elif page == "Customer Insights":
         age_data,
         x="Age Group",
         y="Subscription Rate",
-        title="Subscription Rate by Age Group",
         color="Subscription Rate",
+        title="Subscription Rate by Age Group",
         color_continuous_scale="Blues"
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        dark_chart(fig),
+        use_container_width=True
+    )
+
+    st.divider()
 
     st.subheader("Job Segment Details")
 
@@ -675,7 +897,7 @@ elif page == "Customer Insights":
 
 
 # =========================================================
-# SUBSCRIPTION PREDICTOR
+# PAGE 4: SUBSCRIPTION PREDICTOR
 # =========================================================
 
 elif page == "Subscription Predictor":
@@ -683,23 +905,22 @@ elif page == "Subscription Predictor":
     st.title("🤖 Subscription Predictor")
 
     st.write(
-        "Predict whether a customer may subscribe to a term deposit "
-        "using a Random Forest machine learning model."
+        "Use Machine Learning to estimate whether a customer "
+        "may subscribe to a term deposit."
     )
 
     st.warning(
-        "Educational prediction only. Predictions are estimates, "
-        "not guaranteed customer decisions."
+        "Predictions are educational estimates and are not guaranteed."
     )
 
     st.info(
-        "The duration feature is excluded because it is only known "
-        "after the call and cannot be used for pre-call targeting."
+        "The duration feature is excluded because call duration "
+        "is only known after the call."
     )
 
-    if st.button("Train Machine Learning Model"):
+    if st.button("🚀 Train Random Forest Model"):
 
-        with st.spinner("Training Random Forest model..."):
+        with st.spinner("Training model. Please wait..."):
 
             try:
 
@@ -715,29 +936,22 @@ elif page == "Subscription Predictor":
 
                 st.error(f"Model training failed: {error}")
 
-    if "model" not in st.session_state:
-
-        st.info(
-            "Click the Train Machine Learning Model button first "
-            "to train the prediction model."
-        )
-
-    else:
+    if "model" in st.session_state:
 
         model = st.session_state["model"]
 
         accuracy = st.session_state["accuracy"]
 
+        features = st.session_state["features"]
+
         st.metric(
-            "Model Accuracy",
+            "Model Test Accuracy",
             f"{accuracy * 100:.2f}%"
         )
 
         st.divider()
 
-        st.subheader("Enter Customer Information")
-
-        features = st.session_state["features"]
+        st.subheader("Enter Customer Details")
 
         customer = {}
 
@@ -755,63 +969,60 @@ elif page == "Subscription Predictor":
                         include=["number"]
                     ).columns:
 
-                        default_value = float(
-                            df[feature].median()
-                        )
+                        value = float(df[feature].median())
 
                         customer[feature] = st.number_input(
                             feature.replace(".", " ").title(),
-                            value=default_value
+                            value=value
                         )
 
                     else:
 
                         options = sorted(
-                            df[feature].dropna().astype(str).unique().tolist()
+                            df[feature].dropna().astype(str).unique()
                         )
-
-                        if not options:
-                            options = ["unknown"]
 
                         customer[feature] = st.selectbox(
                             feature.replace(".", " ").title(),
                             options
                         )
 
-            predict_button = st.form_submit_button(
-                "Predict Subscription",
+            predict = st.form_submit_button(
+                "🔍 Predict Subscription",
                 use_container_width=True
             )
 
-        if predict_button:
+        if predict:
 
             try:
 
-                input_df = pd.DataFrame(
+                input_data = pd.DataFrame(
                     [customer],
                     columns=features
                 )
 
-                prediction = model.predict(input_df)[0]
+                prediction = model.predict(input_data)[0]
 
-                probabilities = model.predict_proba(input_df)[0]
+                probabilities = model.predict_proba(input_data)[0]
 
-                classes = model.classes_
+                classes = list(model.classes_)
 
-                yes_index = list(classes).index("yes")
+                yes_probability = (
+                    probabilities[classes.index("yes")] * 100
+                )
 
-                yes_probability = probabilities[yes_index] * 100
+                st.divider()
 
                 if prediction == "yes":
 
                     st.success(
-                        "Prediction: Customer is likely to subscribe."
+                        "Customer is predicted to subscribe."
                     )
 
                 else:
 
                     st.warning(
-                        "Prediction: Customer is unlikely to subscribe."
+                        "Customer is predicted not to subscribe."
                     )
 
                 st.metric(
@@ -819,13 +1030,23 @@ elif page == "Subscription Predictor":
                     f"{yes_probability:.2f}%"
                 )
 
+                st.progress(
+                    float(yes_probability / 100)
+                )
+
             except Exception as error:
 
-                st.error(f"Prediction failed: {error}")
+                st.error(f"Prediction error: {error}")
+
+    else:
+
+        st.info(
+            "First click 'Train Random Forest Model' to start prediction."
+        )
 
 
 # =========================================================
-# MODEL AND DATASET INFORMATION
+# PAGE 5: MODEL AND DATASET
 # =========================================================
 
 elif page == "Model & Dataset":
@@ -833,23 +1054,25 @@ elif page == "Model & Dataset":
     st.title("📚 Model & Dataset Information")
 
     st.write(
-        "Information about the UCI Bank Marketing dataset "
-        "and the machine learning approach."
+        "Explore the dataset and machine learning methodology "
+        "used in this academic project."
     )
 
-    st.subheader("Dataset Information")
+    st.divider()
+
+    st.subheader("Dataset Overview")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.metric(
-            "Rows",
+            "Total Rows",
             f"{df.shape[0]:,}"
         )
 
     with col2:
         st.metric(
-            "Columns",
+            "Total Columns",
             df.shape[1]
         )
 
@@ -859,28 +1082,27 @@ elif page == "Model & Dataset":
             int(df.isnull().sum().sum())
         )
 
-    st.write(
-        "**Target column:** `y` (yes / no)"
-    )
-
     st.divider()
 
     st.subheader("Dataset Preview")
 
     st.dataframe(
         df.head(10),
-        use_container_width=True
+        use_container_width=True,
+        hide_index=True
     )
+
+    st.divider()
 
     st.subheader("Dataset Description")
 
     st.write(
         """
-        The Bank Marketing dataset contains information about
-        customers contacted during bank marketing campaigns.
+        The UCI Bank Marketing dataset contains customer information
+        and marketing campaign details collected by a bank.
 
-        The objective is to understand customer behavior and
-        predict whether a customer subscribes to a term deposit.
+        The objective is to analyze customer behavior and predict
+        whether a customer subscribes to a term deposit.
         """
     )
 
@@ -890,51 +1112,39 @@ elif page == "Model & Dataset":
 
     st.divider()
 
-    st.subheader("Machine Learning Model")
+    st.subheader("Machine Learning Methodology")
 
     st.write("**Algorithm:** Random Forest Classifier")
 
-    st.write("**Preprocessing:**")
+    st.write("**Data Preprocessing:**")
+
+    st.write("- Numerical missing value imputation using median.")
+    st.write("- Categorical missing value imputation using mode.")
+    st.write("- One-Hot Encoding for categorical columns.")
+    st.write("- 80% training data and 20% testing data.")
+
+    st.write("**Prediction Target:**")
+
+    st.write("Term deposit subscription (Yes / No).")
 
     st.write(
-        "- Missing value handling"
-    )
-
-    st.write(
-        "- One-Hot Encoding for categorical features"
-    )
-
-    st.write(
-        "- Median imputation for numerical features"
-    )
-
-    st.write(
-        "- 80% training and 20% testing split"
-    )
-
-    st.write(
-        "**Target:** Predict term deposit subscription (yes/no)."
-    )
-
-    st.write(
-        "**Important:** The duration feature is excluded "
-        "to avoid data leakage."
+        "**Data Leakage Prevention:** The duration column is "
+        "excluded because it is only available after a call."
     )
 
     st.divider()
 
-    st.subheader("Project Technologies")
+    st.subheader("Technologies Used")
 
-    st.write(
-        """
-        - Python
-        - Streamlit
-        - Pandas and NumPy
-        - Scikit-learn
-        - Plotly
-        - SQLite
-        """
-    )
+    st.write("""
+    - Python
+    - Streamlit
+    - Pandas
+    - NumPy
+    - Scikit-learn
+    - Plotly
+    - SQLite
+    """)
 
 
 # =========================================================
@@ -944,5 +1154,9 @@ elif page == "Model & Dataset":
 st.sidebar.divider()
 
 st.sidebar.caption(
-    "Term Deposit Campaign Planner | Academic Project"
+    "Term Deposit Campaign Planner"
+)
+
+st.sidebar.caption(
+    "Academic Machine Learning Project"
 )
