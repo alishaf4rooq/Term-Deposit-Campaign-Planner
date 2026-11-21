@@ -6,6 +6,37 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+# Fix text visibility inside white metric cards
+st.markdown(
+<style>
+/* Metric card background */
+div[data-testid="stMetric"] {
+    background-color: #ffffff !important;
+    padding: 18px !important;
+    border-radius: 12px !important;
+}
+
+/* Metric labels */
+div[data-testid="stMetric"] label,
+div[data-testid="stMetric"] label p {
+    color: #333333 !important;
+    font-weight: 600 !important;
+}
+
+/* Metric values */
+div[data-testid="stMetric"] [data-testid="stMetricValue"],
+div[data-testid="stMetric"] [data-testid="stMetricValue"] div {
+    color: #171717 !important;
+    font-weight: 700 !important;
+}
+
+/* Metric delta text */
+div[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+    color: #333333 !important;
+}
+</style>
+, unsafe_allow_html=True)
+
 from database import init_db, add_campaign, get_campaigns, delete_campaign
 from model_utils import load_dataset, train_model, predict_subscription, FEATURE_COLUMNS, TARGET
 
